@@ -26,6 +26,6 @@ augmentedVal   = augmentedImageDatastore(inputSize, imdsVal);
 
 % 7. Sauvegarde des objets préparés
 save('prepared_data.mat', 'augmentedTrain', 'augmentedVal');
-clear imds imdsTrain imdsVal imgDataTest imgDataTrain datasetPath labelsTrain
+clear imds imdsTrain imdsVal imgDataTest imgDataTrain datasetPath
 
 disp("Préparation des données terminée.");
