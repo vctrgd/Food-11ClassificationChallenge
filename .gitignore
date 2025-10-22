@@ -1,0 +1,6 @@
+*.asv
+*.m~
+test/
+train/
+*.mat      
+*.fig
