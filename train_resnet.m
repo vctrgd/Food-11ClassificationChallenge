@@ -7,13 +7,9 @@ clc
 disp('--- Entraînement Light : ResNet-18 sur FOOD11 ---');
 
 %% 1. Préparation des données
-if isfile('prepared_data.mat')
-    disp('Chargement des données préparées...');
-    load('prepared_data.mat', 'augmentedTrain', 'augmentedVal');
-else
-    disp('Préparation des données...');
-    [augmentedTrain, augmentedVal] = prepareData(); % ta fonction existante
-end
+
+[augmentedTrain, augmentedVal] = prepareData();
+
 
 %% 2. Récupération des classes
 try
