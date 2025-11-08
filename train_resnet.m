@@ -1,95 +1,53 @@
-%% Entraînement d'un modèle ResNet-18 léger sur FOOD11
-% Objectif : transfert rapide et simple
+%% Entraînement ResNet-18 sur FOOD11 - VERSION CORRIGÉE & PROPRE
+close all; clear; clc;
+disp('--- Entraînement ResNet-18 sur FOOD11 ---');
 
-close all
-clear
-clc
-disp('--- Entraînement Light : ResNet-18 sur FOOD11 ---');
+%% 1. Préparation des données (avec imdsVal pour labels)
+[augmentedTrain, augmentedVal, imdsVal] = prepareData();
 
-%% 1. Préparation des données
-
-[augmentedTrain, augmentedVal] = prepareData();
-
-
-%% 2. Récupération des classes
-try
-    imdsInfo = augmentedTrain.UnderlyingDatastores{1};
-    classes = categories(imdsInfo.Labels);
-catch
-    datasetPath = fullfile(pwd, 'train');
-    imdsTemp = imageDatastore(datasetPath, ...
-        'IncludeSubfolders', true, ...
-        'LabelSource', 'foldernames');
-    classes = categories(imdsTemp.Labels);
-end
+%% 2. Récupération des classes (directement depuis imdsVal)
+classes = categories(imdsVal.Labels);
 numClasses = numel(classes);
-disp(['Nombre de classes détectées : ' num2str(numClasses)]);
+disp(['Classes détectées : ' num2str(numClasses)]);
 
-%% 3. Chargement du modèle ResNet-18
+%% 3. Chargement du modèle
 net = resnet18();
-disp('Modèle chargé : ResNet-18');
+lgraph = layerGraph(net);
 inputSize = net.Layers(1).InputSize;
 
-%% 4. Modification des couches finales
-lgraph = layerGraph(net);
+%% 4. Remplacement des couches finales (robuste)
+fcLayer = fullyConnectedLayer(numClasses, ...
+    'Name', 'new_fc', ...
+    'WeightLearnRateFactor', 10, ...
+    'BiasLearnRateFactor', 10);
+classLayer = classificationLayer('Name', 'new_classoutput');
 
-% Dernière couche fullyConnected
-fcIdx = find(arrayfun(@(x) isa(x,'nnet.cnn.layer.FullyConnectedLayer'), lgraph.Layers), 1, 'last');
-classIdx = find(arrayfun(@(x) isa(x,'nnet.cnn.layer.ClassificationOutputLayer'), lgraph.Layers), 1, 'last');
+lgraph = replaceLayer(lgraph, 'fc1000', fcLayer);           % nom fixe ResNet-18
+lgraph = replaceLayer(lgraph, 'ClassificationLayer_fc1000', classLayer);
 
-newLearnableLayer = fullyConnectedLayer(numClasses, ...
-    'Name','new_fc', ...
-    'WeightLearnRateFactor',10, ...
-    'BiasLearnRateFactor',10);
-newClassLayer = classificationLayer('Name','new_classoutput');
-
-lgraph = replaceLayer(lgraph, lgraph.Layers(fcIdx).Name, newLearnableLayer);
-lgraph = replaceLayer(lgraph, lgraph.Layers(classIdx).Name, newClassLayer);
-
-%% 5. Data augmentation minimale
-augmenter = imageDataAugmenter('RandXReflection',true);
-datasetPath = fullfile(pwd, 'train');
-imdsTrain = imageDatastore(datasetPath, ...
-    'IncludeSubfolders', true, ...
-    'LabelSource', 'foldernames');
-
-augmentedTrain = augmentedImageDatastore(inputSize(1:2), imdsTrain, ...
-    'DataAugmentation', augmenter);
-
-%% 6. Options d'entraînement light
+%% 5. Options d'entraînement
 miniBatchSize = 32;
-valFreq = floor(augmentedTrain.NumObservations / miniBatchSize);
-
 options = trainingOptions('adam', ...
     'MiniBatchSize', miniBatchSize, ...
-    'MaxEpochs', 3, ...              % ⚡ Seulement 3 époques
-    'InitialLearnRate', 5e-5, ...    % plus bas pour stabilité
+    'MaxEpochs', 3, ...
+    'InitialLearnRate', 5e-5, ...
     'Shuffle', 'every-epoch', ...
     'ValidationData', augmentedVal, ...
-    'ValidationFrequency', valFreq, ...
+    'ValidationFrequency', 30, ...
     'Verbose', false, ...
     'Plots', 'training-progress', ...
     'ExecutionEnvironment', 'auto');
 
-%% 7. Entraînement
-disp('--- Entraînement démarré (mode rapide) ---');
+%% 6. Entraînement
+disp('Entraînement en cours...');
 trainedNet = trainNetwork(augmentedTrain, lgraph, options);
 
-%% 8. Évaluation rapide
-disp('--- Évaluation ---');
-[YPred, ~] = classify(trainedNet, augmentedVal);
-try
-    YVal = augmentedVal.UnderlyingDatastores{1}.Labels;
-catch
-    datasetPath = fullfile(pwd, 'train');
-    imdsVal = imageDatastore(datasetPath, 'IncludeSubfolders', true, ...
-        'LabelSource', 'foldernames');
-    YVal = imdsVal.Labels;
-end
-
-accuracy = mean(YPred == YVal);
+%% 7. Évaluation (CORRECTE)
+YPred = classify(trainedNet, augmentedVal);
+YTrue = imdsVal.Labels;  % Vrai label, cohérent avec le split
+accuracy = mean(YPred == YTrue);
 disp(['Précision validation : ' num2str(accuracy*100, '%.2f') '%']);
 
-%% 9. Sauvegarde
-save('trainedResNet18_Food11_Light.mat', 'trainedNet', 'classes');
-disp('Modèle sauvegardé : trainedResNet18_Food11_Light.mat');
+%% 8. Sauvegarde
+save('trainedResNet18_Food11_Light.mat', 'trainedNet', 'classes', '-v7.3');
+disp('Modèle sauvegardé.');
