@@ -7,14 +7,12 @@ function [augmentedTrain, augmentedVal] = prepareData()
 
     %% Chargement des images
     disp('Préparation des données FOOD11...');
-    disp();
     datasetPath = fullfile(pwd, 'train');
     imds = imageDatastore(datasetPath, ...
         'IncludeSubfolders', true, ...
         'LabelSource', 'foldernames');
     disp("Nombre total d'images : " + numel(imds.Files));
     disp("Classes trouvées :" + categories(imds.Labels));
-    disp();
 
     %% Division en train / validation
     [imdsTrain, imdsVal] = splitEachLabel(imds, 0.8, 'randomized');
@@ -27,7 +25,7 @@ function [augmentedTrain, augmentedVal] = prepareData()
     augmentedVal   = augmentedImageDatastore(inputSize, imdsVal);
 
     %% Sauvegarde
-    save('prepared_data.mat', 'augmentedTrain', 'augmentedVal');
+    %save('prepared_data.mat', 'augmentedTrain', 'augmentedVal');
     disp("Préparation des données terminée.");
 
 end
