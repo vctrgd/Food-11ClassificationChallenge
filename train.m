@@ -1,4 +1,4 @@
-%% Entraînement modèle ResNet-18 léger sur FOOD11
+%% Entraînement modèle ResNet-18 sur FOOD11
 close all
 clear
 clc
@@ -30,7 +30,7 @@ numClasses = numel(classes);
 disp(['Nombre de classes détectées : ' num2str(numClasses)]);
 
 %% 4. Chargement du modèle ResNet-18
-net = resnet18();
+[net,netclassNames] = imagePretrainedNetwork("resnet18");
 disp('Modèle chargé : ResNet-18');
 inputSize = net.Layers(1).InputSize(1:2);
 
@@ -48,7 +48,13 @@ newLearnableLayer = fullyConnectedLayer(numClasses, ...
 newClassLayer = classificationLayer('Name','new_classoutput');
 
 lgraph = replaceLayer(lgraph, lgraph.Layers(fcIdx).Name, newLearnableLayer);
-lgraph = replaceLayer(lgraph, lgraph.Layers(classIdx).Name, newClassLayer);
+
+% Remplacer/ajouter la softmax et la classification
+lgraph = replaceLayer(lgraph,'prob',softmaxLayer('Name','new_softmax'));
+lgraph = addLayers(lgraph,newClassLayer);
+
+% Connecter la softmax à la nouvelle couche de classification
+lgraph = connectLayers(lgraph,'new_softmax','new_classoutput');
 
 %% 6. Data augmentation minimale
 %augmenter = imageDataAugmenter('RandXReflection',true);
