@@ -2,7 +2,6 @@
 close all
 clear
 clc
-
 disp('Entraînement LeNet-5 sur FOOD11...');
 
 %% 2. Préparation des données
@@ -30,19 +29,24 @@ disp(['Nombre de classes détectées : ' num2str(numClasses)]);
 inputSize = [32 32 3];
 layers = [
     imageInputLayer(inputSize, 'Name', 'input')
+
     convolution2dLayer(5, 6, 'Padding', 2, 'Name', 'conv1')
+    batchNormalizationLayer('Name', 'bn1')  % ← AJOUTER
     reluLayer('Name', 'relu1') 
-    averagePooling2dLayer(2, 'Stride', 2, 'Name', 'pool1') % Pooling 2x2
+    maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool1')
 
     convolution2dLayer(5, 16, 'Padding', 0, 'Name', 'conv2') % Conv2: 5x5, 16 maps
+    batchNormalizationLayer('Name', 'bn2')  % ← AJOUTER
     reluLayer('Name', 'relu2')
-    averagePooling2dLayer(2, 'Stride', 2, 'Name', 'pool2')
+    maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool2')
 
     convolution2dLayer(5, 120, 'Padding', 0, 'Name', 'conv3') % Conv3: 5x5, 120 maps
     reluLayer('Name', 'relu3')
 
     fullyConnectedLayer(84, 'Name', 'fc1') % FC1: 84 units
     reluLayer('Name', 'relu4')
+    %dropoutLayer(0.3,'Name','dropout1')
+
 
     fullyConnectedLayer(numClasses, 'Name', 'fc2') % FC2: adapté à tes 11 classes
     softmaxLayer('Name', 'softmax')
@@ -60,7 +64,7 @@ valFreq = 40;
 options = trainingOptions('adam', ...
     'MiniBatchSize', miniBatchSize, ...
     'MaxEpochs', 10, ...
-    'InitialLearnRate', 1e-4, ... 
+    'InitialLearnRate', 1e-3, ... 
     'Shuffle', 'every-epoch', ...
     'ValidationData', augmentedVal, ...
     'ValidationFrequency', valFreq, ...
@@ -77,6 +81,14 @@ disp('Évaluation en cours...');
 YVal = imdsVal.Labels; % Utilise imdsVal extrait en section 2
 accuracy = mean(YPred == YVal);
 disp(['Précision validation : ' num2str(accuracy*100, '%.2f') '%']);
+
+% Matrice de confusion
+figure;
+cm = confusionchart(YVal, YPred);
+cm.Title = 'Matrice de confusion - LeNet-5';
+cm.RowSummary = 'row-normalized';
+cm.ColumnSummary = 'column-normalized';
+
 
 %% Sauvegarde
 save('trainedLeNet5_Food11.mat', 'trainedNet', 'classes', '-v7.3');
