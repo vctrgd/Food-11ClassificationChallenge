@@ -9,7 +9,13 @@ disp('Entraînement LeNet-5 sur FOOD11...');
 
 % Adapter à la taille du réseau LeNet-5 : 32x32x3
 targetSize = [32 32];
-augmenter = imageDataAugmenter('RandXReflection', true);
+augmenter = imageDataAugmenter( ...
+    'RandXReflection', true, ...
+    'RandRotation', [-15 15], ...          % petites rotations réalistes
+    'RandXTranslation', [-5 5], ...        % décalages horizontaux
+    'RandYTranslation', [-5 5], ...        % décalages verticaux
+    'RandXScale', [0.9 1.1], ...           % zoom léger
+    'RandYScale', [0.9 1.1]);          % éclairage variable
 augmentedTrain = augmentedImageDatastore(targetSize, imdsTrain, ...
     'DataAugmentation', augmenter);
 augmentedVal = augmentedImageDatastore(targetSize, imdsVal);
@@ -45,7 +51,7 @@ layers = [
 
     fullyConnectedLayer(84, 'Name', 'fc1') % FC1: 84 units
     reluLayer('Name', 'relu4')
-    %dropoutLayer(0.3,'Name','dropout1')
+    %dropoutLayer(0.6,'Name','dropout1')
 
 
     fullyConnectedLayer(numClasses, 'Name', 'fc2') % FC2: adapté à tes 11 classes
