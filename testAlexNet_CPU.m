@@ -1,68 +1,69 @@
-%% PRÉDICTION & SOUMISSION - FOOD11 CHALLENGE (version JSON corrigée)
+%% Initialisation
 close all; clear; clc;
-disp('=== PRÉDICTION SUR TEST SET (JSON) ===');
+disp('AlexNet - Génération du fichier submissionAlexNat_CPU.json...');
 
-%% 1. Chargement du modèle entraîné
-modelFile = 'trainedResNet18.mat';
+%% Chargement du modèle entraîné
+modelFile = 'trainedAlexNet_CPU.mat';
 if ~isfile(modelFile)
-    error("Modèle non trouvé ! Exécute d'abord train_resnet.m");
+    error("Modèle non trouvé, il faut exécuter trainAlexNet_CPU.m");
 end
 
 load(modelFile, 'trainedNet', 'classes');
-disp('Modèle chargé : ResNet-18');
+disp('Modèle chargé : AlexNet');
 
-%% 2. Vérification du dossier test
+%% Vérification du dossier test
 testPath = fullfile(pwd, 'test');
 if ~isfolder(testPath)
-    error('Dossier "test" introuvable !');
+    error('Dossier "test" introuvable, voir README.md');
 end
 
-%% 3. Création du datastore test
+%% Création du datastore test
 imdsTest = imageDatastore(testPath, 'IncludeSubfolders', false);
 disp(['Images dans test : ' num2str(numel(imdsTest.Files))]);
 
-%% 4. Redimensionnement
+%% Redimensionnement
 inputSize = trainedNet.Layers(1).InputSize(1:2);
 augmentedTest = augmentedImageDatastore(inputSize, imdsTest);
 
-%% 5. Prédiction
+%% Prédiction
 disp('Prédiction en cours...');
-[predictedLabels, ~] = classify(trainedNet, augmentedTest, 'ExecutionEnvironment', 'gpu');
+[predictedLabels, ~] = classify(trainedNet, augmentedTest);
 
-%% 6. Nettoyage des noms de fichiers
+%% Nettoyage des noms de fichiers
 fileNames = imdsTest.Files;
 fileNames = extractAfter(fileNames, [testPath filesep]);
 fileNames = strrep(fileNames, '\', '/');
 fileNames = erase(fileNames, '/');
 
-% --- Tri numérique des noms ---
+% Tri numérique des noms
 [~, idx] = sort(str2double(erase(fileNames, '.jpg')));
 fileNames = fileNames(idx);
 predictedLabels = predictedLabels(idx);
 
-%% 7. Création du dictionnaire JSON
+%% Création du dictionnaire JSON
 submissionMap = containers.Map;
 
 for i = 1:numel(predictedLabels)
-    key = string(i-1);                    % index (0-based)
+    % index (0-based)
+    key = string(i-1);
     submissionMap(key) = char(predictedLabels(i)); % valeur = label prédite
 end
 
-%% 8. Conversion en JSON et sauvegarde
-outputFile = 'submission.json';
+%% Conversion en JSON et sauvegarde
+outputFile = 'submissionAlexNet_CPU.json';
 
-% --- Suppression automatique de l'ancien fichier ---
+% Suppression automatique de l'ancien fichier
 if isfile(outputFile)
     delete(outputFile);
-    disp('Ancien fichier submission.json supprimé.');
+    disp('Ancien fichier submissionAlexNet_CPU.json supprimé.');
 end
 
-% --- Écriture du nouveau fichier ---
+% Écriture du nouveau fichier
 jsonStr = jsonencode(submissionMap, 'PrettyPrint', true);
 
 fid = fopen(outputFile, 'w');
 if fid == -1
-    error('Impossible de créer submission.json');
+    error('Impossible de créer submissionAlexNet_CPU.json');
 end
 fwrite(fid, jsonStr, 'char');
 fclose(fid);

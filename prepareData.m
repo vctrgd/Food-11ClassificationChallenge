@@ -1,8 +1,9 @@
-function [augmentedTrain, augmentedVal, imdsTrain, imdsVal] = prepareData()% Prépare les données FOOD11 pour l'entraînement et la validation
+function [augmentedTrain, augmentedVal, imdsTrain, imdsVal] = prepareData()
+% Prépare les données FOOD11 pour l'entraînement et la validation
 %
 % Retourne :
-%   augmentedTrain  :   datastore d’images augmentées pour l'entraînement
-%   augmentedVal    :   datastore d’images augmentées pour la validation
+%   augmentedTrain  :   datastore d'images augmentées pour l'entraînement
+%   augmentedVal    :   datastore d'images augmentées pour la validation
 
     %% Chargement des images
     disp('Préparation des données FOOD11...');
@@ -24,7 +25,7 @@ function [augmentedTrain, augmentedVal, imdsTrain, imdsVal] = prepareData()% Pr�
     augmentedVal   = augmentedImageDatastore(inputSize, imdsVal);
 
     %% Sauvegarde
-    %save('prepared_data.mat', 'augmentedTrain', 'augmentedVal');
-    disp("Préparation des données terminée.");
+    % save('preparedData.mat', 'augmentedTrain', 'augmentedVal');
+    % disp("Préparation des données terminée.");
 
 end

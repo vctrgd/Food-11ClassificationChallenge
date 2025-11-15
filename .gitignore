@@ -1,6 +1,7 @@
+train/
+test/
 *.asv
 *.m~
-test/
-train/
-*.mat      
+*.mat
 *.fig
+*.json
